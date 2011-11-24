@@ -19,6 +19,7 @@ else:
 from camera import Camera
 from jcube import JellyCube
 from jcontrol import JellyControl
+from plane import Plane
 
 class Scene :
 	def __init__( self , fovy , ratio , near , far , robot_files ) :
@@ -30,6 +31,20 @@ class Scene :
 		self.camera = None
 		self.jelly = JellyCube();
 		self.jctl  = JellyControl( self.jelly , [1.5,1.5,1.5] )
+		self.jelly.set_borders( (-10,10,-10,10,-10,10) )
+
+		def mkpln( s , p , r , a , c ) :
+			p = Plane((s,s),np.dot(tr.translation_matrix(p),tr.rotation_matrix(r*m.pi/180.0,a)))
+			p.c = c
+			return p
+
+		self.borders = [
+				mkpln(20,(-10,0,0),-90,(0,0,1),(.4,1,0)) ,
+				mkpln(20,( 10,0,0), 90,(0,0,1),(.4,1,0)) ,
+				mkpln(20,(0,0,-10), 90,(1,0,0),(.4,1,0)) ,
+				mkpln(20,(0,0, 10),-90,(1,0,0),(.4,1,0)) ,
+				mkpln(20,(0,-10,0),  0,(1,0,0),(.4,1,0)) ,
+				mkpln(20,(0, 10,0),180,(1,0,0),(.4,1,0)) ]
 
 		self.x = 0.0
 
@@ -47,6 +62,7 @@ class Scene :
 		glEnable( GL_DEPTH_TEST )
 		glEnable( GL_NORMALIZE )
 		glEnable( GL_CULL_FACE )
+		glCullFace( GL_FRONT )
 		glEnable( GL_COLOR_MATERIAL )
 		glColorMaterial( GL_FRONT , GL_AMBIENT_AND_DIFFUSE )
 
@@ -62,7 +78,7 @@ class Scene :
 
 		self.camera.look()
 
-		self.lpos = [ m.sin(self.x/100)*2 , -1 , m.cos(self.x/100)*2 ]
+		self.lpos = [ 3,2,1 ]
 
 		self._set_lights()
 
@@ -79,6 +95,9 @@ class Scene :
 		glTranslatef( -1.5 , - 1.5 , -1.5 )
 		self.jelly.draw()
 		self.jctl.draw()
+		for b in self.borders :
+			glColor3f( *b.c )
+			b.draw()
 
 	def _update_proj( self ) :
 		glMatrixMode(GL_PROJECTION)
@@ -89,8 +108,8 @@ class Scene :
 	def _set_lights( self ) :
 		glEnable(GL_LIGHTING);
 		glLightfv(GL_LIGHT0, GL_AMBIENT, [ 0.2 , 0.2 , 0.2 ] );
-		glLightfv(GL_LIGHT0, GL_DIFFUSE, [ 0.9 , 0.9 , 0.9 ] );
-		glLightfv(GL_LIGHT0, GL_SPECULAR,[ 0.3 , 0.3 , 0.3 ] );
+		glLightfv(GL_LIGHT0, GL_DIFFUSE, [ 0.5 , 0.5 , 0.5 ] );
+		glLightfv(GL_LIGHT0, GL_SPECULAR,[ 0.0 , 0.0 , 0.0 ] );
 		glLightfv(GL_LIGHT0, GL_POSITION, self.lpos );
 		glEnable(GL_LIGHT0); 
 

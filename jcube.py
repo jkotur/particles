@@ -13,6 +13,7 @@ class JellyCube( Drawable ) :
 	SHAPE = (4,4,4)
 	C = 5.0
 	K = 1.0
+	U = .5
 
 	def __init__( self ) :
 		self.pts = np.zeros( (self.SHAPE[0],self.SHAPE[1],self.SHAPE[2],3) , np.float64 )
@@ -44,13 +45,16 @@ class JellyCube( Drawable ) :
 	def gfx_init( self ) :
 		pass
 
+	def set_borders( self , b ) :
+		self.borders = np.array( b , np.float64 )
+
 	def draw( self ) :
 		glPointSize( 5 )
+		glColor3f(1,0,0)
 		glBegin(GL_POINTS)
 		for x in range(self.SHAPE[0]) :
 			for y in range(self.SHAPE[1]) :
 				for z in range(self.SHAPE[2]) :
-					glColor3f(x/4.0 , y/4.0 , z/4.0 )
 					glVertex3f( *self.pts[x,y,z] )
 		glEnd()
 
@@ -65,4 +69,6 @@ class JellyCube( Drawable ) :
 		self.frs += addfrs
 
 		cjelly.update( self.pts , self.prv , self.frs , self.mas , self.K ,self.C , dt )
+
+		cjelly.collisions( self.pts , self.prv , self.borders , self.U )
 

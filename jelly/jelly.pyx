@@ -137,8 +137,9 @@ cpdef int update( np.ndarray[ double , ndim = 4 ] pts ,
 			z = 0
 			while z < pts.shape[2] :
 				f = frs[x,y,z]
-#                if z == 3 and x >= 1 and x <=2 and y >= 1 and y <= 2 :
-#                    f[1] -= 9
+				f[0] += Gx
+				f[1] += Gy
+				f[2] += Gz
 				a = f / mas[x,y,z]
 				n = a * dt * dt + 2 * pts[x,y,z] - prv[x,y,z]
 				prv[x,y,z] = pts[x,y,z]
@@ -162,6 +163,33 @@ cpdef int update_forces( np.ndarray[ double , ndim = 4 ] frs ,
 				lp = ( nl[x,y,z] - pl[x,y,z] ) / ( 2 * dt )
 				frs[x,y,z] += -k * lp - c * nl[x,y,z]
 				pl[x,y,z] = nl[x,y,z]
+				z += 1
+			y += 1
+		x += 1
+
+cpdef int collisions( np.ndarray[ double , ndim = 4 ] pts ,
+                      np.ndarray[ double , ndim = 4 ] prv ,
+					  np.ndarray[ double , ndim = 1 ] brd ,
+					  double u ) :
+	cdef int x , y , z , b , i
+	x = 0
+	while x < pts.shape[0] :
+		y = 0
+		while y < pts.shape[1] :
+			z = 0
+			while z < pts.shape[2] :
+				i = 0 
+				while i < 3 :
+					b = 0
+					# maximum number of collisions with border in one frame
+					while b < 3 : 
+						if pts[x,y,z,b] <= brd[2*b] or \
+						   pts[x,y,z,b] >= brd[2*b+1] :
+							n = prv[x,y,z,b]+u*pts[x,y,z,b]-u*prv[x,y,z,b]
+							pts[x,y,z,b] = prv[x,y,z,b]
+							prv[x,y,z,b] = n
+						b += 1
+					i += 1
 				z += 1
 			y += 1
 		x += 1

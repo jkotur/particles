@@ -9,7 +9,7 @@ import cjelly
 from drawable import Drawable
 
 class JellyControl( Drawable ) :
-	C = 10.0
+	C = 50.0
 	K = 10.0
 
 	PTS = np.array( ((0,0,0),(0,0,1),(0,1,1),(0,1,0),(1,1,0),(1,0,0),(1,0,1),(1,1,1)) , np.float64 )
@@ -49,7 +49,7 @@ class JellyControl( Drawable ) :
 		glTranslatef( *self.pos )
 		glScalef( self.l0 * 3 , self.l0 * 3 , self.l0 * 3 )
 		glTranslatef( -.5 , -.5 , -.5 )
-		glColor3f(1,1,1)
+		glColor3f(1,1,0)
 		glEnableClientState( GL_VERTEX_ARRAY )
 		glVertexPointer( 3 , GL_DOUBLE , 0 , self.PTS )
 		glDrawElements( GL_LINES , 24 , GL_UNSIGNED_SHORT , self.EMS )
