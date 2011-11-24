@@ -20,6 +20,7 @@ from camera import Camera
 from jcube import JellyCube
 from jcontrol import JellyControl
 from plane import Plane
+from mesh import Mesh
 
 class Scene :
 	def __init__( self , fovy , ratio , near , far , robot_files ) :
@@ -45,6 +46,8 @@ class Scene :
 				mkpln(20,(0,0, 10),-90,(1,0,0),(.4,1,0)) ,
 				mkpln(20,(0,-10,0),  0,(1,0,0),(.4,1,0)) ,
 				mkpln(20,(0, 10,0),180,(1,0,0),(.4,1,0)) ]
+
+		self.mesh = Mesh('plane.mesh')
 
 		self.x = 0.0
 
@@ -98,6 +101,7 @@ class Scene :
 		for b in self.borders :
 			glColor3f( *b.c )
 			b.draw()
+		self.mesh.draw()
 
 	def _update_proj( self ) :
 		glMatrixMode(GL_PROJECTION)
