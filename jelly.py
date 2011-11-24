@@ -22,6 +22,7 @@ class App(object):
 	def __init__(self):
 
 		self.move = [0,0,0]
+		self.button = {}
 
 		self.dirskeys = ( ( ['w'] , ['s'] ) , ( ['a'] , ['d'] ) , ( ['e'] , ['q'] ) )
 
@@ -39,7 +40,7 @@ class App(object):
 		glconfig = self.init_glext()
 
 		self.drawing_area = GLDrawingArea(glconfig)
-		self.drawing_area.set_events( gtk.gdk.BUTTON_PRESS_MASK | gtk.gdk.BUTTON_RELEASE_MASK | gtk.gdk.BUTTON3_MOTION_MASK )
+		self.drawing_area.set_events( gtk.gdk.BUTTON_PRESS_MASK | gtk.gdk.BUTTON_RELEASE_MASK | gtk.gdk.BUTTON1_MOTION_MASK | gtk.gdk.BUTTON3_MOTION_MASK )
 		self.drawing_area.set_size_request(320,240)
 
 		builder.get_object("vbox1").pack_start(self.drawing_area)
@@ -70,6 +71,7 @@ class App(object):
 
 		self.drawing_area.connect('motion_notify_event',self._on_mouse_motion)
 		self.drawing_area.connect('button_press_event',self._on_button_pressed)
+		self.drawing_area.connect('button_release_event',self._on_button_released)
 		self.drawing_area.connect('configure_event',self._on_reshape)
 		self.drawing_area.connect_after('expose_event',self._after_draw)
 
@@ -94,14 +96,18 @@ class App(object):
 		self.scene.set_screen_size( width , height )
 
 	def _on_button_pressed( self , widget , data=None ) :
-		if data.button == 3 :
+		if data.button == 1 or data.button == 3 :
 			self.mouse_pos = data.x , data.y
+		self.button[data.button] = True
 		self.drawing_area.queue_draw()
+
+	def _on_button_released( self , widget , data=None ) :
+		self.button[data.button] = False
 
 	def _on_mouse_motion( self , widget , data=None ) :
 		diff = map( op.sub , self.mouse_pos , (data.x , data.y) )
 
-		self.scene.mouse_move( diff )
+		self.scene.mouse_move( diff , self.button )
 
 		self.mouse_pos = data.x , data.y
 		self.drawing_area.queue_draw()

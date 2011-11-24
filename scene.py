@@ -18,6 +18,7 @@ else:
 
 from camera import Camera
 from jcube import JellyCube
+from jcontrol import JellyControl
 
 class Scene :
 	def __init__( self , fovy , ratio , near , far , robot_files ) :
@@ -28,6 +29,7 @@ class Scene :
 
 		self.camera = None
 		self.jelly = JellyCube();
+		self.jctl  = JellyControl( self.jelly , [1.5,1.5,1.5] )
 
 		self.x = 0.0
 
@@ -38,7 +40,7 @@ class Scene :
 		self.lpos = [ 1 ,-1 , 0 ]
 
 	def gfx_init( self ) :
-		self.camera = Camera( ( 0 , 0 , 5 ) , ( 0 , 0 , 0 ) , ( 0 , 1 , 0 ) )
+		self.camera = Camera( ( 0 , 0 , 15 ) , ( 0 , 0 , 0 ) , ( 0 , 1 , 0 ) )
 
 		self._update_proj()
 
@@ -71,11 +73,12 @@ class Scene :
 		self.last_time = self.time
 
 	def _step( self , dt ) :
-		self.jelly.wobble( dt )
+		self.jelly.wobble( dt , self.jctl.forces( dt ) )
 
 	def _draw_scene( self ) :
 		glTranslatef( -1.5 , - 1.5 , -1.5 )
 		self.jelly.draw()
+		self.jctl.draw()
 
 	def _update_proj( self ) :
 		glMatrixMode(GL_PROJECTION)
@@ -108,8 +111,13 @@ class Scene :
 		self.height = h
 		self.set_ratio( float(w)/float(h) )
 
-	def mouse_move( self , df ) :
-		self.camera.rot( *map( lambda x : -x*.2 , df ) )
+	def mouse_move( self , df , buts ) :
+		if 1 in buts and buts[1] :
+			mv = np.array( (-df[0],df[1],0,0) , np.float )
+			mv *= .01
+			self.jctl.move( np.dot( mv , np.linalg.inv(self.camera.m) ) )
+		elif 3 in buts and buts[3] :
+			self.camera.rot( *map( lambda x : -x*.2 , df ) )
 
 	def key_pressed( self , mv ) :
 		self.camera.move( *map( lambda x : x*.25 , mv ) )

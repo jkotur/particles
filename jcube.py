@@ -11,32 +11,29 @@ from drawable import Drawable
 
 class JellyCube( Drawable ) :
 	SHAPE = (4,4,4)
-	C = 0.01
-	K = 2.0
+	C = 5.0
+	K = 1.0
 
 	def __init__( self ) :
 		self.pts = np.zeros( (self.SHAPE[0],self.SHAPE[1],self.SHAPE[2],3) , np.float64 )
 		self.prv = np.zeros( (self.SHAPE[0],self.SHAPE[1],self.SHAPE[2],3) , np.float64 )
-		self.pl = np.zeros( (self.SHAPE[0],self.SHAPE[1],self.SHAPE[2],3) , np.float64 )
-		self.nl = np.zeros( (self.SHAPE[0],self.SHAPE[1],self.SHAPE[2],3) , np.float64 )
+		self.pl  = np.zeros( (self.SHAPE[0],self.SHAPE[1],self.SHAPE[2],3) , np.float64 )
+		self.nl  = np.zeros( (self.SHAPE[0],self.SHAPE[1],self.SHAPE[2],3) , np.float64 )
+		self.frs = np.zeros( (self.SHAPE[0],self.SHAPE[1],self.SHAPE[2],3) , np.float64 )
 		self.mas = np.ones ( (self.SHAPE[0],self.SHAPE[1],self.SHAPE[2],3) , np.float64 )
 		self.l0 = 1
 		self.l1 = m.sqrt(2) * self.l0
 
-		self.__pts_aligned( self.l0 )
+		self.__func( self.pts , lambda x,y,z : np.array((x,y,z)) * self.l0 )
 		self.__func( self.prv , lambda x,y,z : self.pts[x,y,z] )
 		self.__func( self.pl  , lambda x,y,z : 0 )
-		self.__func( self.mas , lambda x,y,z : 10 )
-#        self.pts[2,3,2,1] += .5
-#        self.prv[2,3,2,1] += .5
+		self.__func( self.mas , lambda x,y,z : 1 )
+		self.pts[2,3,2,1] += 2.
+		self.prv[2,3,2,1] += 2
+		self.pts[1,3,1,1] -= 2
+		self.prv[1,3,1,1] -= 2
 
-		self.t = -3
-
-	def __pts_aligned( self , s ) :
-		for x in range(self.SHAPE[0]) :
-			for y in range(self.SHAPE[1]) :
-				for z in range(self.SHAPE[2]) :
-					self.pts[x,y,z] = np.array((x,y,z)) * s
+		self.ctlpos = None
 
 	def __func( self , p , f ) :
 		for x in range(self.SHAPE[0]) :
@@ -58,10 +55,14 @@ class JellyCube( Drawable ) :
 		glEnd()
 
 
-	def wobble( self , dt ) :
-		self.t += dt 
-		if self.t < 0 : return 
+	def wobble( self , dt , addfrs ) :
+		self.nl.fill(0)
+		self.frs.fill(0)
 
 		cjelly.springs( self.pts , self.nl , self.l0 , self.l1 )
-		cjelly.update( self.pts , self.prv , self.pl , self.nl , self.mas , self.K ,self.C , dt )
+
+		cjelly.update_forces( self.frs , self.nl , self.pl , self.K , self.C , dt )
+		self.frs += addfrs
+
+		cjelly.update( self.pts , self.prv , self.frs , self.mas , self.K ,self.C , dt )
 

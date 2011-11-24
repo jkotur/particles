@@ -15,12 +15,57 @@ cdef float Gz = 0
 
 #@cython.boundscheck(False)
 cpdef np.ndarray[ double ] spring_force( np.ndarray[ double ] p0 ,
-                        np.ndarray[ double ] p1 ,
-						double l0 ) :
+                                         np.ndarray[ double ] p1 ,
+						                 double l0 ) :
 	cdef np.ndarray[ double ] dp = p1 - p0
 	cdef double dl = np.linalg.norm( dp )
+	if dl == 0 : return np.zeros( 3 , np.float64 )
 	cdef double l = l0 - dl
+#    print l0 , dl , l , dp / dl * l
 	return dp / dl * l
+
+cpdef int control( np.ndarray[ double , ndim = 4 ] pts ,
+                   np.ndarray[ double , ndim = 4 ] nl  , 
+				   np.ndarray[ double , ndim = 1 ] ctl ,
+				   double l ) :
+	cdef np.ndarray[ double ] p = np.zeros(3)
+	cdef int x = pts.shape[0] - 1
+	cdef int y = pts.shape[1] - 1
+	cdef int z = pts.shape[2] - 1
+	l = l * 3.0 / 2.0
+	p[0] = ctl[0] + l
+	p[1] = ctl[1] + l
+	p[2] = ctl[2] + l
+	nl[x,y,z] += spring_force( pts[x,y,z], p , 0 )
+	p[0] = ctl[0] + l
+	p[1] = ctl[1] + l
+	p[2] = ctl[2] - l
+	nl[x,y,0] += spring_force( pts[x,y,0], p , 0 )
+	p[0] = ctl[0] + l
+	p[1] = ctl[1] - l
+	p[2] = ctl[2] - l
+	nl[x,0,0] += spring_force( pts[x,0,0], p , 0 )
+	p[0] = ctl[0] - l
+	p[1] = ctl[1] - l
+	p[2] = ctl[2] - l
+	nl[0,0,0] += spring_force( pts[0,0,0], p , 0 )
+	p[0] = ctl[0] - l
+	p[1] = ctl[1] - l
+	p[2] = ctl[2] + l
+	nl[0,0,z] += spring_force( pts[0,0,z], p , 0 )
+	p[0] = ctl[0] - l
+	p[1] = ctl[1] + l
+	p[2] = ctl[2] + l
+	nl[0,y,z] += spring_force( pts[0,y,z], p , 0 )
+	p[0] = ctl[0] - l
+	p[1] = ctl[1] + l
+	p[2] = ctl[2] - l
+	nl[0,y,0] += spring_force( pts[0,y,0], p , 0 )
+	p[0] = ctl[0] + l
+	p[1] = ctl[1] - l
+	p[2] = ctl[2] + l
+	nl[x,0,z] += spring_force( pts[x,0,z], p , 0 )
+	return 0
 
 cpdef int springs( np.ndarray[ double , ndim = 4 ] pts ,
                    np.ndarray[ double , ndim = 4 ] nl , 
@@ -33,10 +78,6 @@ cpdef int springs( np.ndarray[ double , ndim = 4 ] pts ,
 		while y < pts.shape[1] :
 			z = 0
 			while z < pts.shape[2] :
-				nl[x,y,z,0] = 0
-				nl[x,y,z,1] = 0
-				nl[x,y,z,2] = 0
-
 				if x+1 < pts.shape[0] :
 					nl[x,y,z]+=spring_force(pts[x,y,z],pts[x+1,y,z],l0)
 				if y+1 < pts.shape[1] :
@@ -76,12 +117,11 @@ cpdef int springs( np.ndarray[ double , ndim = 4 ] pts ,
 				z += 1
 			y += 1
 		x += 1
-
+	return 0
 
 cpdef int update( np.ndarray[ double , ndim = 4 ] pts ,
                   np.ndarray[ double , ndim = 4 ] prv ,
-                  np.ndarray[ double , ndim = 4 ] pl  ,
-                  np.ndarray[ double , ndim = 4 ] nl  ,
+                  np.ndarray[ double , ndim = 4 ] frs ,
                   np.ndarray[ double , ndim = 4 ] mas ,
 				  double k , double c ,
                   double dt ) :
@@ -96,14 +136,32 @@ cpdef int update( np.ndarray[ double , ndim = 4 ] pts ,
 		while y < pts.shape[1] :
 			z = 0
 			while z < pts.shape[2] :
-				dl  = ( nl[x,y,z] - pl[x,y,z] ) / ( 2 * dt )
-				f = -k * dl - c * nl[x,y,z]
-				if y == 3 and x >= 1 and x <=2 and z >= 1 and z <= 2 :
-					f[1] -= 9
+				f = frs[x,y,z]
+#                if z == 3 and x >= 1 and x <=2 and y >= 1 and y <= 2 :
+#                    f[1] -= 9
 				a = f / mas[x,y,z]
 				n = a * dt * dt + 2 * pts[x,y,z] - prv[x,y,z]
 				prv[x,y,z] = pts[x,y,z]
 				pts[x,y,z] = n
+				z += 1
+			y += 1
+		x += 1
+
+cpdef int update_forces( np.ndarray[ double , ndim = 4 ] frs ,
+                         np.ndarray[ double , ndim = 4 ] nl  ,
+                         np.ndarray[ double , ndim = 4 ] pl  ,
+				         double k , double c ,
+                         double dt ) :
+	cdef int x , y , z
+	x = 0
+	while x < frs.shape[0] :
+		y = 0
+		while y < frs.shape[1] :
+			z = 0
+			while z < frs.shape[2] :
+				lp = ( nl[x,y,z] - pl[x,y,z] ) / ( 2 * dt )
+				frs[x,y,z] += -k * lp - c * nl[x,y,z]
+				pl[x,y,z] = nl[x,y,z]
 				z += 1
 			y += 1
 		x += 1
