@@ -1,4 +1,2 @@
-Base project for python+opengl+gtk application
-
-It contains empty gladeui, and empty gl scene. There is support for camera movement and farme dt calculation to ease making simulations. Project includes also simple shadres library and third-party library for matrix transformations. Should work fine on windows but was develop fully under linux.
+Simulation of jelly based on 4x4x4 points cube.
 

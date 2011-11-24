@@ -17,15 +17,17 @@ else:
     timer = time.time
 
 from camera import Camera
+from jcube import JellyCube
 
 class Scene :
-	def __init__( self , fovy , ratio , near , far ) :
+	def __init__( self , fovy , ratio , near , far , robot_files ) :
 		self.fovy = fovy
 		self.near = near 
 		self.far = far
 		self.ratio = ratio
 
 		self.camera = None
+		self.jelly = JellyCube();
 
 		self.x = 0.0
 
@@ -69,17 +71,11 @@ class Scene :
 		self.last_time = self.time
 
 	def _step( self , dt ) :
-		pass
+		self.jelly.wobble( dt )
 
 	def _draw_scene( self ) :
-		glColor3f(.3,1,0)
-		glTranslatef(-.5,-.5,0)
-		glBegin(GL_QUADS)
-		glVertex3f(0.0,0.0,0.0)
-		glVertex3f(1.0,0.0,0.0)
-		glVertex3f(1.0,1.0,0.0)
-		glVertex3f(0.0,1.0,0.0)
-		glEnd()
+		glTranslatef( -1.5 , - 1.5 , -1.5 )
+		self.jelly.draw()
 
 	def _update_proj( self ) :
 		glMatrixMode(GL_PROJECTION)
