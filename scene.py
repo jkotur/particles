@@ -21,6 +21,7 @@ from jcube import JellyCube
 from jcontrol import JellyControl
 from plane import Plane
 from mesh import Mesh
+from cube import Cube
 
 class Scene :
 	def __init__( self , fovy , ratio , near , far , robot_files ) :
@@ -47,7 +48,8 @@ class Scene :
 				mkpln(20,(0,-10,0),  0,(1,0,0),(.4,1,0)) ,
 				mkpln(20,(0, 10,0),180,(1,0,0),(.4,1,0)) ]
 
-		self.mesh = Mesh('plane.mesh')
+#        self.mesh = Mesh( 'data/mesh3.mesh' )
+		self.cube = Cube( 2 )
 
 		self.x = 0.0
 
@@ -58,14 +60,13 @@ class Scene :
 		self.lpos = [ 1 ,-1 , 0 ]
 
 	def gfx_init( self ) :
-		self.camera = Camera( ( 0 , 0 , 15 ) , ( 0 , 0 , 0 ) , ( 0 , 1 , 0 ) )
+		self.camera = Camera( (-3 ,-1 ,-1 ) , ( 0 ,-1 ,-1 ) , ( 0 , 1 , 0 ) )
 
 		self._update_proj()
 
 		glEnable( GL_DEPTH_TEST )
 		glEnable( GL_NORMALIZE )
 		glEnable( GL_CULL_FACE )
-		glCullFace( GL_FRONT )
 		glEnable( GL_COLOR_MATERIAL )
 		glColorMaterial( GL_FRONT , GL_AMBIENT_AND_DIFFUSE )
 
@@ -92,16 +93,21 @@ class Scene :
 		self.last_time = self.time
 
 	def _step( self , dt ) :
+		dt *= .1
 		self.jelly.wobble( dt , self.jctl.forces( dt ) )
 
 	def _draw_scene( self ) :
 		glTranslatef( -1.5 , - 1.5 , -1.5 )
 		self.jelly.draw()
 		self.jctl.draw()
+		glCullFace( GL_FRONT )
 		for b in self.borders :
 			glColor3f( *b.c )
 			b.draw()
-		self.mesh.draw()
+		glCullFace( GL_BACK )
+		glColor3f(0,0,1)
+#        self.mesh.draw()
+		self.cube.draw()
 
 	def _update_proj( self ) :
 		glMatrixMode(GL_PROJECTION)
