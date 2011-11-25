@@ -9,10 +9,10 @@ import cjelly
 from drawable import Drawable
 
 class JellyControl( Drawable ) :
-	C = 50.0
+	C = 500.0
 	K = 10.0
 
-	PTS = np.array( ((0,0,0),(0,0,1),(0,1,1),(0,1,0),(1,1,0),(1,0,0),(1,0,1),(1,1,1)) , np.float64 )
+	PTS = np.array( ((0,0,0),(0,0,1),(0,1,1),(0,1,0),(1,1,0),(1,0,0),(1,0,1),(1,1,1)) , np.float32 )
 	EMS = np.array( (0,1, 0,3, 0,5, 1,2, 1,6, 2,3, 2,7, 3,4, 4,5, 4,7, 5,6, 6,7 ) , np.ushort )
 
 
@@ -20,17 +20,17 @@ class JellyControl( Drawable ) :
 		self.pts = jelly.pts
 		self.l0  = jelly.l0
 
-		self.frs = np.zeros( (jelly.SHAPE[0],jelly.SHAPE[1],jelly.SHAPE[2],3) , np.float64 )
-		self.pl = np.zeros( (jelly.SHAPE[0],jelly.SHAPE[1],jelly.SHAPE[2],3) , np.float64 )
-		self.nl = np.zeros( (jelly.SHAPE[0],jelly.SHAPE[1],jelly.SHAPE[2],3) , np.float64 )
+		self.frs = np.zeros( (jelly.SHAPE[0],jelly.SHAPE[1],jelly.SHAPE[2],4) , np.float32 )
+		self.pl = np.zeros( (jelly.SHAPE[0],jelly.SHAPE[1],jelly.SHAPE[2],4) , np.float32 )
+		self.nl = np.zeros( (jelly.SHAPE[0],jelly.SHAPE[1],jelly.SHAPE[2],4) , np.float32 )
 
 		self.set_pos( pos )
 
 	def move( self , d ) :
-		self.pos += np.resize( d , 3 )
+		self.pos += np.resize( d , 4 )
 
 	def set_pos( self , p ) :
-		self.pos = np.array(p,np.float64)
+		self.pos = np.resize( np.array(p,np.float32) , 4 )
 
 	def get_pos( self ) :
 		return self.pos
@@ -46,7 +46,7 @@ class JellyControl( Drawable ) :
 
 	def draw( self ) :
 		glPushMatrix(GL_MODELVIEW)
-		glTranslatef( *self.pos )
+		glTranslatef( self.pos[0] , self.pos[1] ,self.pos[2] )
 		glScalef( self.l0 * 3 , self.l0 * 3 , self.l0 * 3 )
 		glTranslatef( -.5 , -.5 , -.5 )
 		glColor3f(1,1,0)

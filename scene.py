@@ -48,8 +48,7 @@ class Scene :
 				mkpln(20,(0,-10,0),  0,(1,0,0),(.4,1,0)) ,
 				mkpln(20,(0, 10,0),180,(1,0,0),(.4,1,0)) ]
 
-#        self.mesh = Mesh( 'data/mesh3.mesh' )
-		self.cube = Cube( 2 )
+		self.cube = Cube( 10 )
 
 		self.x = 0.0
 
@@ -60,7 +59,10 @@ class Scene :
 		self.lpos = [ 1 ,-1 , 0 ]
 
 	def gfx_init( self ) :
-		self.camera = Camera( (-3 ,-1 ,-1 ) , ( 0 ,-1 ,-1 ) , ( 0 , 1 , 0 ) )
+		self.camera = Camera( ( 0 , 0 , 5 ) , ( 0 , 0 , 0 ) , ( 0 , 1 , 0 ) )
+
+		self.jelly.gfx_init()
+		self.cube.gfx_init()
 
 		self._update_proj()
 
@@ -93,21 +95,17 @@ class Scene :
 		self.last_time = self.time
 
 	def _step( self , dt ) :
-		dt *= .1
+#        dt *= .1
 		self.jelly.wobble( dt , self.jctl.forces( dt ) )
 
 	def _draw_scene( self ) :
 		glTranslatef( -1.5 , - 1.5 , -1.5 )
-		self.jelly.draw()
+		self.jelly.draw( self.cube )
 		self.jctl.draw()
 		glCullFace( GL_FRONT )
 		for b in self.borders :
 			glColor3f( *b.c )
 			b.draw()
-		glCullFace( GL_BACK )
-		glColor3f(0,0,1)
-#        self.mesh.draw()
-		self.cube.draw()
 
 	def _update_proj( self ) :
 		glMatrixMode(GL_PROJECTION)

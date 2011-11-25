@@ -23,17 +23,20 @@ def compile_shader(source, shader_type):
 		raise ValueError, 'Shader compilation failed'
 	return shader
 
-def compile_program(name) :
-	return compile_program_from_file(name+".vert",name+".geom",name+".frag")
+def compile_program_vf(name) :
+	return compile_program_from_file(name+".vert",name+".frag")
 
-def compile_program_from_file(vertex_file , geometry_file ,fragment_file ) :
+def compile_program_vfg(name) :
+	return compile_program_from_file(name+".vert",name+".frag",name+".geom")
+
+def compile_program_from_file(vertex_file , fragment_file , geometry_file = None ) :
 	vsrc = open(vertex_file,"r")
-	gsrc = open(geometry_file,"r")
 	fsrc = open(fragment_file,"r")
+	gsrc = open(geometry_file,"r") if geometry_file else None
 
-	return compile_program_from_source(vsrc.read(),fsrc.read(),gsrc.read())
+	return compile_program_from_source(vsrc.read(),fsrc.read(),gsrc.read() if gsrc else None)
 
-def compile_program_from_source(vertex_source, fragment_source , geometry_source ) :
+def compile_program_from_source(vertex_source, fragment_source , geometry_source = None ) :
 	vertex_shader = None
 	geometry_shader = None
 	fragment_shader = None
@@ -86,3 +89,4 @@ def print_shader_log(shader,info):
 #    print "'",log,"'"
 #    print "<** shader error **"
 #    print
+

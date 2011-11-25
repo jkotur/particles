@@ -14,21 +14,21 @@ cdef float Gy =-9
 cdef float Gz = 0
 
 #@cython.boundscheck(False)
-cpdef np.ndarray[ double ] spring_force( np.ndarray[ double ] p0 ,
-                                         np.ndarray[ double ] p1 ,
-						                 double l0 ) :
-	cdef np.ndarray[ double ] dp = p1 - p0
-	cdef double dl = np.linalg.norm( dp )
-	if dl == 0 : return np.zeros( 3 , np.float64 )
-	cdef double l = l0 - dl
+cpdef np.ndarray[ float ] spring_force( np.ndarray[ float ] p0 ,
+                                         np.ndarray[ float ] p1 ,
+						                 float l0 ) :
+	cdef np.ndarray[ float ] dp = p1 - p0
+	cdef float dl = np.linalg.norm( dp )
+	if dl == 0 : return np.zeros( 4 , np.float32 )
+	cdef float l = l0 - dl
 #    print l0 , dl , l , dp / dl * l
 	return dp / dl * l
 
-cpdef int control( np.ndarray[ double , ndim = 4 ] pts ,
-                   np.ndarray[ double , ndim = 4 ] nl  , 
-				   np.ndarray[ double , ndim = 1 ] ctl ,
-				   double l ) :
-	cdef np.ndarray[ double ] p = np.zeros(3)
+cpdef int control( np.ndarray[ float , ndim = 4 ] pts ,
+                   np.ndarray[ float , ndim = 4 ] nl  , 
+				   np.ndarray[ float , ndim = 1 ] ctl ,
+				   float l ) :
+	cdef np.ndarray[ float ] p = np.zeros( 4 , np.float32 )
 	cdef int x = pts.shape[0] - 1
 	cdef int y = pts.shape[1] - 1
 	cdef int z = pts.shape[2] - 1
@@ -67,9 +67,9 @@ cpdef int control( np.ndarray[ double , ndim = 4 ] pts ,
 	nl[x,0,z] += spring_force( pts[x,0,z], p , 0 )
 	return 0
 
-cpdef int springs( np.ndarray[ double , ndim = 4 ] pts ,
-                   np.ndarray[ double , ndim = 4 ] nl , 
-				   double l0 , double l1 ) :
+cpdef int springs( np.ndarray[ float , ndim = 4 ] pts ,
+                   np.ndarray[ float , ndim = 4 ] nl , 
+				   float l0 , float l1 ) :
 	cdef int x , y , z
 
 	x = 0
@@ -119,15 +119,15 @@ cpdef int springs( np.ndarray[ double , ndim = 4 ] pts ,
 		x += 1
 	return 0
 
-cpdef int update( np.ndarray[ double , ndim = 4 ] pts ,
-                  np.ndarray[ double , ndim = 4 ] prv ,
-                  np.ndarray[ double , ndim = 4 ] frs ,
-                  np.ndarray[ double , ndim = 4 ] mas ,
-				  double k , double c ,
-                  double dt ) :
-	cdef np.ndarray a = np.zeros( 3 )
-	cdef np.ndarray v = np.zeros( 3 )
-	cdef np.ndarray n = np.zeros( 3 )
+cpdef int update( np.ndarray[ float , ndim = 4 ] pts ,
+                  np.ndarray[ float , ndim = 4 ] prv ,
+                  np.ndarray[ float , ndim = 4 ] frs ,
+                  np.ndarray[ float , ndim = 3 ] mas ,
+				  float k , float c ,
+                  float dt ) :
+	cdef np.ndarray a = np.zeros( 4 )
+	cdef np.ndarray v = np.zeros( 4 )
+	cdef np.ndarray n = np.zeros( 4 )
 
 	cdef int x , y , z
 	x = 0
@@ -148,11 +148,11 @@ cpdef int update( np.ndarray[ double , ndim = 4 ] pts ,
 			y += 1
 		x += 1
 
-cpdef int update_forces( np.ndarray[ double , ndim = 4 ] frs ,
-                         np.ndarray[ double , ndim = 4 ] nl  ,
-                         np.ndarray[ double , ndim = 4 ] pl  ,
-				         double k , double c ,
-                         double dt ) :
+cpdef int update_forces( np.ndarray[ float , ndim = 4 ] frs ,
+                         np.ndarray[ float , ndim = 4 ] nl  ,
+                         np.ndarray[ float , ndim = 4 ] pl  ,
+				         float k , float c ,
+                         float dt ) :
 	cdef int x , y , z
 	x = 0
 	while x < frs.shape[0] :
@@ -167,10 +167,10 @@ cpdef int update_forces( np.ndarray[ double , ndim = 4 ] frs ,
 			y += 1
 		x += 1
 
-cpdef int collisions( np.ndarray[ double , ndim = 4 ] pts ,
-                      np.ndarray[ double , ndim = 4 ] prv ,
-					  np.ndarray[ double , ndim = 1 ] brd ,
-					  double u ) :
+cpdef int collisions( np.ndarray[ float , ndim = 4 ] pts ,
+                      np.ndarray[ float , ndim = 4 ] prv ,
+					  np.ndarray[ float , ndim = 1 ] brd ,
+					  float u ) :
 	cdef int x , y , z , b , i
 	x = 0
 	while x < pts.shape[0] :
