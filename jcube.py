@@ -78,7 +78,10 @@ class JellyCube( Drawable ) :
 
 	def gfx_init( self ) :
 		try :
-			self.prog = sh.compile_program_vf( 'shad/wobble' )
+			print 'compiling'
+			self.prog = sh.compile_program_vfg( 'shad/wobble' )
+
+			print 'compiled'
 
 			self.loc_mmv = sh.get_loc(self.prog,'modelview' )
 			self.loc_mp  = sh.get_loc(self.prog,'projection')

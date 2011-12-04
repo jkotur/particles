@@ -14,8 +14,8 @@ import cjelly
 from drawable import Drawable
 
 class JellyControl( Drawable ) :
-	C = 5000.0
-	K = 100.0
+	C = 500.0
+	K = 10.0
 
 	PTS = np.array( ((0,0,0),(0,0,1),(0,1,1),(0,1,0),(1,1,0),(1,0,0),(1,0,1),(1,1,1)) , np.float32 )
 	EMS = np.array( (0,1, 0,3, 0,5, 1,2, 1,6, 2,3, 2,7, 3,4, 4,5, 4,7, 5,6, 6,7 ) , np.ushort )

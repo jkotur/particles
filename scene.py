@@ -48,7 +48,8 @@ class Scene :
 				mkpln(20,(0,-10,0),  0,(1,0,0),(.4,1,0)) ,
 				mkpln(20,(0, 10,0),180,(1,0,0),(.4,1,0)) ]
 
-		self.cube = Cube( 10 )
+		self.cube = Cube( 100 )
+#        self.cube = Mesh( 'data/FROG.3DS.gk2' )
 
 		self.x = 0.0
 
@@ -59,7 +60,7 @@ class Scene :
 		self.lpos = [ 1 ,-1 , 0 ]
 
 	def gfx_init( self ) :
-		self.camera = Camera( ( 0 , 0 , 5 ) , ( 0 , 0 , 0 ) , ( 0 , 1 , 0 ) )
+		self.camera = Camera( ( 0 , 0 ,10 ) , ( 0 , 0 , 0 ) , ( 0 , 1 , 0 ) )
 
 		self.jelly.gfx_init()
 		self.jctl.gfx_init()
@@ -100,6 +101,7 @@ class Scene :
 
 	def _draw_scene( self ) :
 		glTranslatef( -1.5 , - 1.5 , -1.5 )
+		glCullFace( GL_BACK )
 		self.jelly.draw( self.cube )
 		self.jctl.draw()
 		glCullFace( GL_FRONT )

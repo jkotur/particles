@@ -25,18 +25,16 @@ class Mesh( Drawable ) :
 		self.volume = np.zeros( 0 , np.float32 )
 		self.normal = np.zeros( 0 , np.float32 )
 
-		self.pts_len = 0
-
 		self.lpos = [0]*3
 		self.prog = None
 
 
 	def draw( self ) :
 		glEnableClientState(GL_VERTEX_ARRAY)
-		glEnableClientState(GL_NORMAL_ARRAY)
+		if self.n != None : glEnableClientState(GL_NORMAL_ARRAY)
 
 		glVertexPointer( 3 , GL_DOUBLE , 0 , self.v )
-		glNormalPointer(     GL_DOUBLE , 0 , self.n )
+		if self.n != None : glNormalPointer(     GL_DOUBLE , 0 , self.n )
 
 		glDrawElements( GL_TRIANGLES , self.t.size , GL_UNSIGNED_INT , self.t )
 
@@ -59,12 +57,13 @@ class Mesh( Drawable ) :
 		except ValueError as e :
 			print "Could not convert data: " , e
 
-		self.pts_len = len(self.v)/3
-		assert( self.pts_len == len(self.n)/3 )
 
 		self.verts = np.array( self.verts , np.float64 )
 		self.v     = np.array( self.v     , np.float64 )
-		self.n     = np.array( self.n     , np.float64 )
+		if len(self.v) == len(self.n) :
+			self.n = np.array( self.n     , np.float64 )
+		else :
+			self.n = None
 		self.t     = np.array( self.t     , np.uint64  )
 		self.ev    = np.array( self.ev    , np.uint64  )
 		self.et    = np.array( self.et    , np.uint64  )
