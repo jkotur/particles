@@ -62,6 +62,7 @@ class Scene :
 		self.camera = Camera( ( 0 , 0 , 5 ) , ( 0 , 0 , 0 ) , ( 0 , 1 , 0 ) )
 
 		self.jelly.gfx_init()
+		self.jctl.gfx_init()
 		self.cube.gfx_init()
 
 		self._update_proj()
@@ -95,7 +96,6 @@ class Scene :
 		self.last_time = self.time
 
 	def _step( self , dt ) :
-#        dt *= .1
 		self.jelly.wobble( dt , self.jctl.forces( dt ) )
 
 	def _draw_scene( self ) :
