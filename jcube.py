@@ -22,8 +22,8 @@ from drawable import Drawable
 
 class JellyCube( Drawable ) :
 	SHAPE = (4,4,4)
-	C = 500.0
-	K = 20.0
+	C = 2000.0
+	K = 50.0
 	U = .5
 
 	def __init__( self ) :

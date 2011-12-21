@@ -115,6 +115,9 @@ class App(object):
 #        gtk.gdk.Keymap
 
 	def _on_key_pressed( self , widget , data=None ) :
+		if data.keyval == gtk.gdk.unicode_to_keyval(ord('c')) :
+			self.scene.toggle_control()
+
 		if not any(self.move) :
 			gtk.timeout_add( 20 , self._move_callback )
 

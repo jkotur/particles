@@ -35,6 +35,8 @@ class Scene :
 		self.jctl  = JellyControl( self.jelly , [1.5,1.5,1.5] )
 		self.jelly.set_borders( (-10,10,-10,10,-10,10) )
 
+		self.mode = 0
+
 		def mkpln( s , p , r , a , c ) :
 			p = Plane((s,s),np.dot(tr.translation_matrix(p),tr.rotation_matrix(r*m.pi/180.0,a)))
 			p.c = c
@@ -97,7 +99,10 @@ class Scene :
 		self.last_time = self.time
 
 	def _step( self , dt ) :
-		self.jelly.wobble( dt , self.jctl.forces( dt ) )
+		if self.mode == 0 :
+			self.jelly.wobble( dt , self.jctl.forces( dt ) )
+		else :
+			self.jelly.wobble( dt )
 
 	def _draw_scene( self ) :
 		glTranslatef( -1.5 , - 1.5 , -1.5 )
@@ -150,4 +155,8 @@ class Scene :
 
 	def key_pressed( self , mv ) :
 		self.camera.move( *map( lambda x : x*.25 , mv ) )
+
+	def toggle_control( self ) :
+		self.mode = not self.mode
+
 
