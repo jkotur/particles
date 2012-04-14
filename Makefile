@@ -1,12 +1,9 @@
 
-run: cjelly.so jelly_kernel.cubin
-	python jelly.py 
+run: water_kernel.cubin
+	python particles.py 
 
-cjelly.so: jelly/jelly.pyx
-	cd jelly ; $(MAKE) $(MFLAGS)
-
-jelly_kernel.cubin: jelly_kernel.cu
-	nvcc --cubin -arch sm_11 -I/usr/include/pycuda jelly_kernel.cu
+water_kernel.cubin: water_kernel.cu
+	nvcc --cubin -arch sm_11 -I/usr/include/pycuda water_kernel.cu
 
 clean:
-	rm jelly_kernel.cubin cjelly.so
+	rm water_kernel.cubin *pyc

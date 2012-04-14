@@ -17,23 +17,20 @@ else:
     timer = time.time
 
 from camera import Camera
-from jcube import JellyCube
-from jcontrol import JellyControl
+from water import Water
 from plane import Plane
-from mesh import Mesh
-from cube import Cube
 
 class Scene :
-	def __init__( self , fovy , ratio , near , far , robot_files ) :
+	def __init__( self , fovy , ratio , near , far ) :
 		self.fovy = fovy
 		self.near = near 
 		self.far = far
 		self.ratio = ratio
 
 		self.camera = None
-		self.jelly = JellyCube();
-		self.jctl  = JellyControl( self.jelly , [1.5,1.5,1.5] )
-		self.jelly.set_borders( (-10,10,-10,10,-10,10) )
+
+		self.water = Water()
+		self.water.set_borders( (-10,10,-10,10,-10,10) )
 
 		self.mode = 0
 
@@ -50,9 +47,6 @@ class Scene :
 				mkpln(20,(0,-10,0),  0,(1,0,0),(.4,1,0)) ,
 				mkpln(20,(0, 10,0),180,(1,0,0),(.4,1,0)) ]
 
-		self.cube = Cube( 100 )
-#        self.cube = Mesh( 'data/FROG.3DS.gk2' )
-
 		self.x = 0.0
 
 		self.last_time = timer()
@@ -64,9 +58,7 @@ class Scene :
 	def gfx_init( self ) :
 		self.camera = Camera( ( 0 , 0 ,10 ) , ( 0 , 0 , 0 ) , ( 0 , 1 , 0 ) )
 
-		self.jelly.gfx_init()
-		self.jctl.gfx_init()
-		self.cube.gfx_init()
+		self.water.gfx_init()
 
 		self._update_proj()
 
@@ -99,16 +91,12 @@ class Scene :
 		self.last_time = self.time
 
 	def _step( self , dt ) :
-		if self.mode == 0 :
-			self.jelly.wobble( dt , self.jctl.forces( dt ) )
-		else :
-			self.jelly.wobble( dt )
+		self.water.wave( dt )
 
 	def _draw_scene( self ) :
 		glTranslatef( -1.5 , - 1.5 , -1.5 )
 		glCullFace( GL_BACK )
-		self.jelly.draw( self.cube )
-		self.jctl.draw()
+		self.water.draw()
 		glCullFace( GL_FRONT )
 		for b in self.borders :
 			glColor3f( *b.c )
@@ -146,11 +134,7 @@ class Scene :
 		self.set_ratio( float(w)/float(h) )
 
 	def mouse_move( self , df , buts ) :
-		if 1 in buts and buts[1] :
-			mv = np.array( (-df[0],df[1],0,0) , np.float )
-			mv *= .01
-			self.jctl.move( np.dot( mv , np.linalg.inv(self.camera.m) ) )
-		elif 3 in buts and buts[3] :
+		if 3 in buts and buts[3] :
 			self.camera.rot( *map( lambda x : -x*.2 , df ) )
 
 	def key_pressed( self , mv ) :

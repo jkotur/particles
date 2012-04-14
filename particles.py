@@ -12,9 +12,7 @@ from glwidget import GLDrawingArea
 
 from scene import Scene
 
-ui_file = "jelly.ui"
-
-meshes = [ 'data/mesh{0}.mesh'.format(i) for i in range(1,7) ]
+ui_file = "particles.ui"
 
 class App(object):
 	"""Application main class"""
@@ -52,7 +50,7 @@ class App(object):
 		win_main.connect('key-press-event'  , self._on_key_pressed  )
 		win_main.connect('key-release-event', self._on_key_released )
 
-		self.scene = Scene( self.fov , .01 , self.near , self.far , meshes )
+		self.scene = Scene( self.fov , .01 , self.near , self.far )
 		self.drawing_area.add( self.scene )
 
 		print 'Scene added'
