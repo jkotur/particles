@@ -20,20 +20,23 @@ import shaders as sh
 from drawable import Drawable
 
 class Water( Drawable ) :
-	NUM = int(8000)
-	U = .5
+	NUM = int(2197)
+	BOX = int(13)
+	DIST= 0.5
+	U = 0.5
 
 	def __init__( self ) :
-		self.pts = np.zeros( (self.NUM,4) , np.float32 )
+		self.pts = np.zeros( (self.NUM,3) , np.float32 )
 #        self.prv = np.zeros( (self.NUM,4) , np.float32 )
 		self.vel = np.zeros( (self.NUM,3) , np.float32 )
 		self.acc = np.zeros( (self.NUM,3) , np.float32 )
 		self.frs = np.zeros( (self.NUM,3) , np.float32 )
 		self.mas = np.ones ( (self.NUM,1) , np.float32 )
+		self.dns = np.ones ( (self.NUM,1) , np.float32 )
 
-		self.__func( self.pts , lambda i : np.array((i%20,int(i/20)%20,int(i/20/20)%20,10)) * 0.1 )
+		self.__func( self.pts , lambda i : np.array((i%self.BOX,int(i/self.BOX)%self.BOX,int(i/self.BOX/self.BOX)%self.BOX)) * self.DIST )
 #        self.__func( self.prv , lambda i : self.pts[i] )
-		self.__func( self.mas , lambda i : 10 )
+		self.__func( self.mas , lambda i : 0.1 )
 
 		self.dbrd = None
 
@@ -55,7 +58,7 @@ class Water( Drawable ) :
 		glColor3f(1,0,0)
 		glEnableClientState(GL_VERTEX_ARRAY)
 		glBindBuffer( GL_ARRAY_BUFFER , self.gpts )
-		glVertexPointer( 4 , GL_FLOAT , 0 , None )
+		glVertexPointer( 3 , GL_FLOAT , 0 , None )
 		glBindBuffer( GL_ARRAY_BUFFER , 0 )
 		glDrawArrays( GL_POINTS , 0 , self.NUM )
 		glDisableClientState(GL_VERTEX_ARRAY)
@@ -100,12 +103,14 @@ class Water( Drawable ) :
 		self.dacc = cuda_driver.mem_alloc( self.acc.nbytes )
 		self.dfrs = cuda_driver.mem_alloc( self.frs.nbytes )
 		self.dmas = cuda_driver.mem_alloc( self.mas.nbytes )
+		self.ddns = cuda_driver.mem_alloc( self.dns.nbytes )
 
 #        cuda_driver.memcpy_htod( self.dprv , self.prv )
 		cuda_driver.memcpy_htod( self.dvel , self.vel )
 		cuda_driver.memcpy_htod( self.dacc , self.acc )
 		cuda_driver.memcpy_htod( self.dfrs , self.frs )
 		cuda_driver.memcpy_htod( self.dmas , self.mas )
+		cuda_driver.memcpy_htod( self.ddns , self.dns )
 
 		mod = cuda_driver.module_from_file( 'water_kernel.cubin' )
 
@@ -113,10 +118,13 @@ class Water( Drawable ) :
 		self.update_pts.prepare( "PPPfi" )
 
 		self.update_vel = mod.get_function("update_vel")
-		self.update_vel.prepare( "PPPPfi" )
+		self.update_vel.prepare( "PPPfi" )
+
+		self.update_dns = mod.get_function("update_dns")
+		self.update_dns.prepare( "PPPi" )
 
 		self.update_frs = mod.get_function("update_frs")
-		self.update_frs.prepare( "PPi" )
+		self.update_frs.prepare( "PPPPPi" )
 
 		self.collisions = mod.get_function("collisions")
 		self.collisions.prepare( "PPPfPfi" )
@@ -156,15 +164,33 @@ class Water( Drawable ) :
 		self.update_pts.prepared_call( self.grid , self.block ,
 			dpts.device_ptr() , self.dvel , self.dacc , dt , self.NUM )
 
-		self.collisions.prepared_call( self.grid , self.block ,
+		if self.dbrd :
+			self.collisions.prepared_call( self.grid , self.block ,
 				dpts.device_ptr() , self.dvel , self.dacc , dt , self.dbrd , self.U , self.NUM )
 
+		self.update_dns.prepared_call( self.grid , self.block ,
+			dpts.device_ptr() , self.ddns , self.dmas , self.NUM )
+
 		self.update_frs.prepared_call( self.grid , self.block ,
-			dpts.device_ptr() , self.dfrs , self.NUM )
+			dpts.device_ptr() , self.dvel , self.dfrs , self.dmas , self.ddns , self.NUM )
 
 		self.update_vel.prepared_call( self.grid , self.block ,
-			self.dvel , self.dacc , self.dfrs , self.dmas , dt , self.NUM )
+			self.dvel , self.dacc , self.dfrs , dt , self.NUM )
+
+#        self._debug_print()
 
 		dpts.unmap()
 		mpts.unregister()
+
+	def _debug_print( self ) :
+		cuda_driver.memcpy_dtoh( self.vel , self.dvel )
+		cuda_driver.memcpy_dtoh( self.acc , self.dacc )
+		cuda_driver.memcpy_dtoh( self.frs , self.dfrs )
+		cuda_driver.memcpy_dtoh( self.dns , self.ddns )
+
+		print '#'*80
+		print self.vel
+		print self.acc
+		print self.frs
+		print self.dns
 
