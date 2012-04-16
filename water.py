@@ -51,7 +51,7 @@ class Water( Drawable ) :
 		cuda_driver.memcpy_htod( self.dbrd , self.borders )
 
 	def draw( self ) :
-		self.draw_pts() 
+		self.draw_balls() 
 
 	def draw_pts( self ) :
 		glPointSize( 5 )
@@ -63,27 +63,54 @@ class Water( Drawable ) :
 		glDrawArrays( GL_POINTS , 0 , self.NUM )
 		glDisableClientState(GL_VERTEX_ARRAY)
 
+	def draw_balls( self ) :
+		glPointSize( 5 )
+		glPushMatrix()
+
+		glAlphaFunc( GL_GREATER , 0.1 );
+		glEnable( GL_ALPHA_TEST )
+
+		glUseProgram( self.prog )
+
+		mmv = glGetFloatv(GL_MODELVIEW_MATRIX)   
+		mp  = glGetFloatv(GL_PROJECTION_MATRIX)  
+												 
+		glUniformMatrix4fv(self.loc_mmv,1,GL_FALSE,mmv)
+		glUniformMatrix4fv(self.loc_mp ,1,GL_FALSE,mp )
+
+		glUniform4f(self.l_color , 1 , .5 , 0 , 1 )
+		glUniform1f(self.l_size  , 2 )
+
+		glEnableClientState(GL_VERTEX_ARRAY)
+		glBindBuffer( GL_ARRAY_BUFFER , self.gpts )
+		glVertexPointer( 3 , GL_FLOAT , 0 , None )
+		glBindBuffer( GL_ARRAY_BUFFER , 0 )
+		glDrawArrays( GL_POINTS , 0 , self.NUM )
+		glDisableClientState(GL_VERTEX_ARRAY)
+
+		glDisable( GL_ALPHA_TEST )
+		glUseProgram( 0 )
+		glPopMatrix()
+
 	def gfx_init( self ) :
 		try :
 			print 'compiling'
-			self.prog = sh.compile_program_vfg( 'shad/wobble' )
+			self.prog = sh.compile_program_vfg( 'shad/balls' )
 
 			print 'compiled'
 
 			self.loc_mmv = sh.get_loc(self.prog,'modelview' )
 			self.loc_mp  = sh.get_loc(self.prog,'projection')
 			self.l_color = sh.get_loc(self.prog,'color'     )
-			pointsid     = sh.get_loc(self.prog,'points'    )
+			self.l_size  = sh.get_loc(self.prog,'ballsize'  )
 
 		except ValueError as ve :
 			print "Shader compilation failed: " + str(ve)
 			sys.exit(0)    
 
-		self.btex = glGenTextures(1)
-
-		glUseProgram( self.prog )
-		glUniform1i( pointsid , 0 );
-		glUseProgram( 0 )
+#        glUseProgram( self.prog )
+#        glUniform1i( pointsid , 0 );
+#        glUseProgram( 0 )
 
 		#
 		# cuda init
@@ -128,30 +155,6 @@ class Water( Drawable ) :
 
 		self.collisions = mod.get_function("collisions")
 		self.collisions.prepare( "PPPfPfi" )
-
-	def draw_mesh( self , mesh ) :
-		glPushMatrix()
-		glScalef(2,2,2)
-		glBindTexture(GL_TEXTURE_BUFFER,self.btex)
-		glTexBuffer(GL_TEXTURE_BUFFER,GL_RGBA32F,self.gpts)
-		glBindTexture(GL_TEXTURE_BUFFER,0)                    
-
-		glUseProgram( self.prog )
-
-		mmv = glGetFloatv(GL_MODELVIEW_MATRIX)   
-		mp  = glGetFloatv(GL_PROJECTION_MATRIX)  
-												 
-		glUniformMatrix4fv(self.loc_mmv,1,GL_FALSE,mmv)
-		glUniformMatrix4fv(self.loc_mp ,1,GL_FALSE,mp )
-
-		glBindTexture(GL_TEXTURE_BUFFER,self.btex)
-
-		glUniform4f(self.l_color , 1 , .5 , 0 , 1 )
-
-		mesh.draw()
-
-		glUseProgram( 0 )
-		glPopMatrix()
 
 
 	def wave( self , dt ) :

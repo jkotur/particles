@@ -21,7 +21,7 @@ __constant__ real h9 = 512;
 __constant__ real k  = 0.5;
 __constant__ real d0 = 100; // rest density
 __constant__ real p0 = 200; // rest pressure
-__constant__ real vi = 10e0; // fluid viscosity
+__constant__ real vi = 5; // fluid viscosity
 
 // interpolation kernel
 __device__ real W( real3 r )
