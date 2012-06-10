@@ -31,6 +31,7 @@ class Scene :
 
 		self.water = Water()
 		self.water.set_borders( (-10,10,-10,10,-10,10) )
+#        self.water.set_borders( (-100,100,-10,1000,-100,100) )
 
 		self.mode = 0
 
@@ -38,6 +39,13 @@ class Scene :
 			p = Plane((s,s),np.dot(tr.translation_matrix(p),tr.rotation_matrix(r*m.pi/180.0,a)))
 			p.c = c
 			return p
+
+#        self.borders = [
+#                mkpln(200,(-100,0,0),-90,(0,0,1),(.4,1,0)) ,
+#                mkpln(200,( 100,0,0), 90,(0,0,1),(.4,1,0)) ,
+#                mkpln(200,(0,0,-100), 90,(1,0,0),(.4,1,0)) ,
+#                mkpln(200,(0,0, 100),-90,(1,0,0),(.4,1,0)) ,
+#                mkpln(200,(0,-10,0),  0,(1,0,0),(.4,1,0)) ]
 
 		self.borders = [
 				mkpln(20,(-10,0,0),-90,(0,0,1),(.4,1,0)) ,
@@ -56,7 +64,7 @@ class Scene :
 		self.lpos = [ 1 ,-1 , 0 ]
 
 	def gfx_init( self ) :
-		self.camera = Camera( ( 0 , 0 ,10 ) , ( 0 , 0 , 0 ) , ( 0 , 1 , 0 ) )
+		self.camera = Camera( ( 0 , 20 ,50 ) , ( 0 , 0 , 0 ) , ( 0 , 1 , 0 ) )
 
 		self.water.gfx_init()
 
@@ -143,4 +151,9 @@ class Scene :
 	def toggle_control( self ) :
 		self.mode = not self.mode
 
+	def set_model( self , mtype ) :
+		if mtype == 0 :
+			self.water.set( Water.SPH_T )
+		elif mtype == 1 :
+			self.water.set( Water.LBM_T )
 

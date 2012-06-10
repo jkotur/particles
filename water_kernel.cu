@@ -93,7 +93,6 @@ __global__ void update_dns( real3*pts , real3*dns , real*mas , uint num )
 	real d = 0;
 	for( int j=0; j<num; ++j )
 	{
-		if( j==i ) continue;
 		d += mas[j] * W( p - pts[j] );
 	}
 
@@ -116,6 +115,8 @@ __global__ void update_frs( real3*pts , real3*vel , real3*frs , real*mas , real*
 		a += - mas[j]*(prsi+prsj)/(2*dns[j])*dW( ptsi - pts[j] );
 		a += vi * mas[j]*(vel[j]-veli)/dns[j]*ddW( ptsi - pts[j] );
 	}
+
+	a /= dns[i];
 
 	frs[i].x = a.x + Gx;
 	frs[i].y = a.y + Gy;

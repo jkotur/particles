@@ -39,7 +39,7 @@ class App(object):
 
 		self.drawing_area = GLDrawingArea(glconfig)
 		self.drawing_area.set_events( gtk.gdk.BUTTON_PRESS_MASK | gtk.gdk.BUTTON_RELEASE_MASK | gtk.gdk.BUTTON1_MOTION_MASK | gtk.gdk.BUTTON3_MOTION_MASK )
-		self.drawing_area.set_size_request(320,240)
+		self.drawing_area.set_size_request(768,576)
 
 		builder.get_object("vbox1").pack_start(self.drawing_area)
 
@@ -170,6 +170,9 @@ class App(object):
 #        print
 
 		return glconfig
+
+	def on_model_changed(self,widget,data=None):
+		self.scene.set_model( widget.get_active() )
 
 	def on_win_main_destroy(self,widget,data=None):
 		gtk.main_quit()
