@@ -20,36 +20,42 @@ import shaders as sh
 from drawable import Drawable
 
 class LBM( Drawable ) :
-	NUM = int(2197)
-	BOX = int(13)
-	DIST= 0.5
-	U = 0.5
+	BOX = int(23)
+	NUM = BOX**3
+	D = int(3)
+	Q = int(19)
+	TAU = 0.5
+
+	BALLSIZE = 15
 
 	def __init__( self ) :
-		self.pts = np.zeros( (self.NUM,3) , np.float32 )
-#        self.prv = np.zeros( (self.NUM,4) , np.float32 )
-		self.vel = np.zeros( (self.NUM,3) , np.float32 )
-		self.acc = np.zeros( (self.NUM,3) , np.float32 )
-		self.frs = np.zeros( (self.NUM,3) , np.float32 )
-		self.mas = np.ones ( (self.NUM,1) , np.float32 )
-		self.dns = np.ones ( (self.NUM,1) , np.float32 )
+		self.f = np.zeros( (self.BOX,self.BOX,self.BOX,self.Q), np.float32 )
+		self.pos = np.zeros( (self.BOX,self.BOX,self.BOX,4), np.float32 )
 
-		self.__func( self.pts , lambda i : np.array((i%self.BOX,int(i/self.BOX)%self.BOX,int(i/self.BOX/self.BOX)%self.BOX)) * self.DIST )
-#        self.__func( self.pts , lambda i : np.array((rnd.uniform(-1,1),i,rnd.uniform(-1,1))) * self.DIST )
-#        self.__func( self.prv , lambda i : self.pts[i] )
-		self.__func( self.mas , lambda i : 1 )
+		self._init_ball( self.BALLSIZE )
+		self._init_pos()
 
-		self.dbrd = None
+		self.gpos = None
 
-	def __func( self , p , f ) :
-		for i in range(self.NUM) :
-			p[i] = f( i )
+	def _init_ball( self , p ) :
+		b2 = self.BOX / 2.0
+		for x in range(self.BOX) :
+			for y in range(self.BOX) :
+				for z in range(self.BOX) :
+					for w in range(self.Q) :
+						self.f[x,y,z,w] = 0
+					if (x-b2)**2 + (y-b2)**2 + (z-b2)**2 < p :
+						self.f[x,y,z,0] = .1
+
+	def _init_pos( self ) :
+		b2 = self.BOX / 2.0
+		for x in range(self.BOX) :
+			for y in range(self.BOX) :
+				for z in range(self.BOX) :
+					self.pos[x,y,z] = np.array((x-b2,y-b2,z-b2,self.f[x,y,z,0]),np.float32)
 
 	def set_borders( self , b ) :
 		self.borders = np.array( b , np.float32 )
-		if self.dbrd == None :
-			self.dbrd = cuda_driver.mem_alloc( self.borders.nbytes )
-		cuda_driver.memcpy_htod( self.dbrd , self.borders )
 
 	def draw( self ) :
 		self.draw_balls() 
@@ -58,8 +64,8 @@ class LBM( Drawable ) :
 		glPointSize( 5 )
 		glColor3f(1,0,0)
 		glEnableClientState(GL_VERTEX_ARRAY)
-		glBindBuffer( GL_ARRAY_BUFFER , self.gpts )
-		glVertexPointer( 3 , GL_FLOAT , 0 , None )
+		glBindBuffer( GL_ARRAY_BUFFER , self.gpos )
+		glVertexPointer( 4 , GL_FLOAT , 0 , None )
 		glBindBuffer( GL_ARRAY_BUFFER , 0 )
 		glDrawArrays( GL_POINTS , 0 , self.NUM )
 		glDisableClientState(GL_VERTEX_ARRAY)
@@ -83,8 +89,8 @@ class LBM( Drawable ) :
 		glUniform1f(self.l_size  , 1.5 )
 
 		glEnableClientState(GL_VERTEX_ARRAY)
-		glBindBuffer( GL_ARRAY_BUFFER , self.gpts )
-		glVertexPointer( 3 , GL_FLOAT , 0 , None )
+		glBindBuffer( GL_ARRAY_BUFFER , self.gpos )
+		glVertexPointer( 4 , GL_FLOAT , 0 , None )
 		glBindBuffer( GL_ARRAY_BUFFER , 0 )
 		glDrawArrays( GL_POINTS , 0 , self.NUM )
 		glDisableClientState(GL_VERTEX_ARRAY)
@@ -116,85 +122,69 @@ class LBM( Drawable ) :
 		#
 		# cuda init
 		#
-		self.grid = (int(self.NUM/256)+1,1)
-		self.block = (256,1,1)
+		self.grid = (int(self.BOX),int(self.BOX))
+		self.block = (1,1,int(self.BOX))
 
 		print 'CUDA: block %s , grid %s' % (str(self.block),str(self.grid))
+#        print cuda_driver.device_attribute.MAX_THREADS_PER_BLOCK
+#        print cuda_driver.device_attribute.MAX_BLOCK_DIM_X
+#        print cuda_driver.device_attribute.MAX_BLOCK_DIM_Y
+#        print cuda_driver.device_attribute.MAX_BLOCK_DIM_Z
 
-		self.gpts = glGenBuffers(1)
-		glBindBuffer( GL_ARRAY_BUFFER , self.gpts )
-		glBufferData( GL_ARRAY_BUFFER , self.pts.nbytes , self.pts , GL_STREAM_DRAW )
+		floatbytes = np.dtype(np.float32).itemsize
+
+		self.gpos = glGenBuffers(1)
+		glBindBuffer( GL_ARRAY_BUFFER , self.gpos )
+		glBufferData( GL_ARRAY_BUFFER , self.pos.nbytes, self.pos, GL_STREAM_DRAW )
 		glBindBuffer( GL_ARRAY_BUFFER , 0 )
 
-#        self.dprv = cuda_driver.mem_alloc( self.prv.nbytes )
-		self.dvel = cuda_driver.mem_alloc( self.vel.nbytes )
-		self.dacc = cuda_driver.mem_alloc( self.acc.nbytes )
-		self.dfrs = cuda_driver.mem_alloc( self.frs.nbytes )
-		self.dmas = cuda_driver.mem_alloc( self.mas.nbytes )
-		self.ddns = cuda_driver.mem_alloc( self.dns.nbytes )
+		self.df1 = cuda_driver.mem_alloc( self.f.nbytes )
+		self.df2 = cuda_driver.mem_alloc( self.f.nbytes )
 
-#        cuda_driver.memcpy_htod( self.dprv , self.prv )
-		cuda_driver.memcpy_htod( self.dvel , self.vel )
-		cuda_driver.memcpy_htod( self.dacc , self.acc )
-		cuda_driver.memcpy_htod( self.dfrs , self.frs )
-		cuda_driver.memcpy_htod( self.dmas , self.mas )
-		cuda_driver.memcpy_htod( self.ddns , self.dns )
+		cuda_driver.memcpy_htod( self.df1 , self.f )
+		cuda_driver.memset_d32( self.df2 , 0 , self.NUM*self.Q )
 
-		mod = cuda_driver.module_from_file( 'water_kernel.cubin' )
+		mod = cuda_driver.module_from_file( 'lbm_kernel.cubin' )
 
-		self.update_pts = mod.get_function("update_pts")
-		self.update_pts.prepare( "PPPfi" )
+		self.collision = mod.get_function("collision_step")
+		self.collision.prepare( "Piii" )
 
-		self.update_vel = mod.get_function("update_vel")
-		self.update_vel.prepare( "PPPfi" )
+		self.streaming = mod.get_function("streaming_step")
+		self.streaming.prepare( "PPiii" )
 
-		self.update_dns = mod.get_function("update_dns")
-		self.update_dns.prepare( "PPPi" )
-
-		self.update_frs = mod.get_function("update_frs")
-		self.update_frs.prepare( "PPPPPi" )
-
-		self.collisions = mod.get_function("collisions")
-		self.collisions.prepare( "PPPfPfi" )
-
+		self.colors = mod.get_function("colors")
+		self.colors.prepare( "PPiii" )
 
 	def wave( self , dt ) :
 		self.wave_cu( dt )
 
 	def wave_cu( self , dt ) :
-		mpts = cuda_gl.BufferObject( long( self.gpts ) )
-		dpts = mpts.map()
-
-		self.update_pts.prepared_call( self.grid , self.block ,
-			dpts.device_ptr() , self.dvel , self.dacc , dt , self.NUM )
-
-		if self.dbrd :
-			self.collisions.prepared_call( self.grid , self.block ,
-				dpts.device_ptr() , self.dvel , self.dacc , dt , self.dbrd , self.U , self.NUM )
-
-		self.update_dns.prepared_call( self.grid , self.block ,
-			dpts.device_ptr() , self.ddns , self.dmas , self.NUM )
-
-		self.update_frs.prepared_call( self.grid , self.block ,
-			dpts.device_ptr() , self.dvel , self.dfrs , self.dmas , self.ddns , self.NUM )
-
-		self.update_vel.prepared_call( self.grid , self.block ,
-			self.dvel , self.dacc , self.dfrs , dt , self.NUM )
+		mpos = cuda_gl.BufferObject( long( self.gpos ) )
+		dpos = mpos.map()
 
 #        self._debug_print()
 
-		dpts.unmap()
-		mpts.unregister()
+		self.collision.prepared_call( self.grid , self.block ,
+			self.df1 , self.BOX , self.BOX , self.BOX )
+
+#        self._debug_print()
+
+		self.streaming.prepared_call( self.grid , self.block ,
+			self.df1 , self.df2 , self.BOX , self.BOX , self.BOX )
+
+		cuda_driver.memcpy_dtod( self.df1 , self.df2 , self.f.nbytes )
+
+		self.colors.prepared_call( self.grid , self.block ,
+			dpos.device_ptr() , self.df1 , self.BOX , self.BOX , self.BOX )
+
+		dpos.unmap()
+		mpos.unregister()
 
 	def _debug_print( self ) :
-		cuda_driver.memcpy_dtoh( self.vel , self.dvel )
-		cuda_driver.memcpy_dtoh( self.acc , self.dacc )
-		cuda_driver.memcpy_dtoh( self.frs , self.dfrs )
-		cuda_driver.memcpy_dtoh( self.dns , self.ddns )
+		cuda_driver.memcpy_dtoh( self.f , self.df1 )
+
+		np.set_printoptions( 3 , 10000 , linewidth = 200 , suppress = True )
 
 		print '#'*80
-		print self.vel
-		print self.acc
-		print self.frs
-		print self.dns
+		print self.f
 

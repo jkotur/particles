@@ -140,7 +140,7 @@ class SPH( Drawable ) :
 		cuda_driver.memcpy_htod( self.dmas , self.mas )
 		cuda_driver.memcpy_htod( self.ddns , self.dns )
 
-		mod = cuda_driver.module_from_file( 'water_kernel.cubin' )
+		mod = cuda_driver.module_from_file( 'sph_kernel.cubin' )
 
 		self.update_pts = mod.get_function("update_pts")
 		self.update_pts.prepare( "PPPfi" )
